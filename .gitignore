@@ -40,3 +40,4 @@ Thumbs.db
 .LSOverride
 
 venv/
+*.pyc

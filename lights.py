@@ -2,6 +2,8 @@ import pigpio
 import time
 import datetime
 import re
+from mqtt_class import MyMQTTClass, historical_settings, getLastSettings
+import sys
 
 class Settings(object):
     def __init__(self):
@@ -191,10 +193,20 @@ class Lights(object):
         self.on_time = settings_object.on_time
         self.off_time = settings_object.off_time 
 
-        if self.on_time <= now <= self.off_time:
+        self.a_print('self.on_time: {} | self.off_time: {} | now: {}'.format(self.on_time, self.off_time, now), 'alert')
+        # print('self.off_time = {}'.format(self.off_time), 'alert')
+        # print('now = {}'.format(now), 'alert')
+
+        if now >= self.on_time and now <= self.off_time:
+        # if self.on_time >= now <= self.off_time:
+            # self.a_print(str(settings_object) + ' True ' + '{:%I:%M %p}'.format(now), 'alert')
+            # self.a_print('YES', 'alert')
             self.low = settings_object.low 
             self.high = settings_object.high 
-        elif self.on_time >= now >= self.off_time:
+        elif now < self.on_time or now > self.off_time:
+        # elif self.on_time <= now >= self.off_time:
+            # self.a_print('NO', 'alert')
+            # self.a_print(str(settings_object) + ' False ' + '{:%I:%M %p}'.format(now), 'alert')
             self.low = 0 
             self.high = settings_object.low 
 
@@ -210,35 +222,42 @@ class Lights(object):
 
     def a_print(self, string, level):
         x = {
-        'setting': ' \x1b[30;41mSetting Change\x1b[0m: ',
-        'target': ' \x1b[30;42mTarget Change\x1b[0m: ',
-        'alert': ' \x1b[31;40mAlert\x1b[0m: ',
-        'auto_off': ' \x1b[30;44mAUTO OFF ALERT\x1b[0m: ',
-        'input': ' \x1b[30;42mINPUT\x1b[0m: '
+            'setting': ' \x1b[30;41mSetting Change\x1b[0m: ',
+            'target': ' \x1b[30;42mTarget Change\x1b[0m: ',
+            'alert': ' \x1b[31;40mAlert\x1b[0m: ',
+            'auto_off': ' \x1b[30;44mAUTO OFF ALERT\x1b[0m: ',
+            'input': ' \x1b[30;42mINPUT\x1b[0m: '
         }
         fixed = re.sub('True', '\x1b[32;40mTrue\x1b[0m', string)
         fixed = re.sub('False', '\x1b[31;40mFalse\x1b[0m', fixed)
         print(str(datetime.datetime.now()) + x[level] + fixed)
 
     def main(self):
-        self.update_settings(settings)
+        self.update_settings(historical_settings[-1])
+        # self.a_print(str(historical_settings[-1]), 'alert')
         self.input_update()
         self.set_light()
-        
-
 
 print('\n')
 print('===============================================================================')
 print('BEGIN')
 print('===============================================================================\n')
 
-lights = Lights()
-settings = Settings()
+if bool(historical_settings) == False:
+    getLastSettings()
 
-lights.update_settings(settings_object=settings, boot=True)
+lights = Lights()
+# settings = Settings()
+
+# lights.update_settings(settings, boot=True)
+lights.update_settings(historical_settings[-1], boot=True)
+
+mqttc = MyMQTTClass()
+rc = mqttc.run()
 
 cb1 = lights.pi.callback(lights.switch, pigpio.RISING_EDGE, lights.event_cbf)   
 cb2 = lights.pi.callback(lights.pir, pigpio.RISING_EDGE, lights.event_cbf)  
+
 
 time.sleep(1)
 try:
@@ -250,3 +269,6 @@ try:
 except KeyboardInterrupt:
     lights.pi.set_PWM_dutycycle(lights.led_array, 0)
     lights.pi.stop()
+    mqttc.disconnect()
+    mqttc.loop_stop()    
+    sys.exit()
