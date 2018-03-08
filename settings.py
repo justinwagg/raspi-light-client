@@ -1,7 +1,9 @@
 
 import datetime
 import sqlite3
+from a_print import a_print
 
+historical_settings = []
 
 class Settings(object):
     def __init__(self, settings_dict, insert=False):
@@ -21,7 +23,7 @@ class Settings(object):
             settings_dict['device_id'] = settings_dict['device']
             settings_dict.pop('device')
 
-            print('Saving Record in SQLite')
+            a_print('Saving Record in SQLite', 'sql')
             conn = sqlite3.connect('settings.db', check_same_thread=False)
             c = conn.cursor()
             table = 'settings'
@@ -37,3 +39,32 @@ class Settings(object):
     def __repr__(self):
         # return 'On Time: {self.on_time:%I:%M %p} | Off Time: {self.off_time:%I:%M %p} | Low Light: {self.low}% | High Light: {self.high}% | Manual Light: {self.manual}% | As of: {self.received_on:%Y-%m-%d %I:%M %p}'.format(self.on_time, self.off_time, self.low, self.high, self.manual, self.received_on)
         return 'On Time: {0:%I:%M %p} | Off Time: {1:%I:%M %p} | Low Light: {2}% | High Light: {3}% | Manual Light: {4}% | As of: {5:%Y-%m-%d %I:%M %p}'.format(self.on_time, self.off_time, self.low, self.high, self.manual, self.received_on)
+
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+def getLastSettings():
+    # print('No settings, getting defaults from SQLite')
+    a_print('No settings, getting defaults from SQLite', 'setting')
+    try:
+        conn = sqlite3.connect('settings.db', check_same_thread=False)
+        c = conn.cursor()
+        c.row_factory = dict_factory
+        c.execute('select high, low, manual, off_time, on_time, received_on from settings a inner join (select max(id) as id from settings) b on a.id=b.id')
+        results = c.fetchall()
+        conn.close()
+        historical_settings.append(Settings(results[0]))
+    except:
+        default = {
+            'low': 30,
+            'high': 100,
+            'manual': 100,
+            'on_time': datetime.datetime.strptime('17:00:00', '%H:%M:%S').time(),
+            'off_time': datetime.datetime.strptime('23:00:00', '%H:%M:%S').time(),
+        }
+        historical_settings.append(Settings(default))
+
+
