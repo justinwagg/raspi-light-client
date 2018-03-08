@@ -2,7 +2,7 @@ import paho.mqtt.client as mqtt
 from settings import Settings, historical_settings
 import json
 import sqlite3
-from a_print import a_print
+from printer import a_print
 
 
 class MyMQTTClass(mqtt.Client):

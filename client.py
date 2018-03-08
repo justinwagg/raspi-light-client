@@ -1,5 +1,5 @@
 import time
-from mqtt_class import MyMQTTClass, historical_settings, getLastSettings
+from mqtt_ import MyMQTTClass, historical_settings, getLastSettings
 import datetime
 
 if bool(historical_settings) == False:

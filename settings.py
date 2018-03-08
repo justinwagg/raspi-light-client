@@ -1,7 +1,7 @@
 
 import datetime
 import sqlite3
-from a_print import a_print
+from printer import a_print
 
 historical_settings = []
 
