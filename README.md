@@ -13,7 +13,7 @@ Following [raspberrypi.org's documentation]( https://www.raspberrypi.org/documen
 sudo dd bs=1m if=/path/to-your-image.img of=/dev/rdiskn conv=sync
 ```
 
-1. Once the image is transferred, you'll want to setup headless access. Create a file in `boot` on the SD Card named `wpa_supplicant.conf` with the contents below. Change `SSID` and `PASS` to be your local credentials. 
+2. Once the image is transferred, you'll want to setup headless access. Create a file in `boot` on the SD Card named `wpa_supplicant.conf` with the contents below. Change `SSID` and `PASS` to be your local credentials. 
 	
 ```
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
@@ -28,22 +28,22 @@ network={
 }
 ```
 
-2. Create an empty file `ssh.txt` in same directory.
-3. Boot your RasberryPi.
-4. After a minute or so the image should boot and gain access to your provided network SSID.
+3. Create an empty file `ssh.txt` in same directory.
+4. Boot your RasberryPi.
+5. After a minute or so the image should boot and gain access to your provided network SSID.
 
 ```
 ssh pi@192.168.1.55
 pi@192.168.1.55's password:
 ```
-5. [Install pigpio](http://abyz.me.uk/rpi/pigpio/download.html). Setup to run pigpio daemon at startup:
+6. [Install pigpio](http://abyz.me.uk/rpi/pigpio/download.html). Setup to run pigpio daemon at startup:
 
 ```
 sudo crontab -e
 @reboot  /usr/local/bin/pigpiod
 ```
 
-6. Get project requirements setup
+7. Get project requirements setup
 
 ```
 sudo pip install virtualenv
@@ -54,7 +54,7 @@ cd Projects
 git clone git@github.com:justinwagg/raspi-light-client.git
 ```
 
-7. Create virtualenv for project and install requirements
+8. Create virtualenv for project and install requirements
 	
 ```
 cd raspi-light-client
@@ -62,14 +62,14 @@ virtualenv venv
 pip install -r requirements.txt
 ```
 
-8. Build the intitial settings database. A default row will be inserted.
+9. Build the intitial settings database. A default row will be inserted.
 
 ```
 cd setup
 python create_database.py
 ```
 
-9. Setup a cronjob to launch the client on boot. 
+10. Setup a cronjob to launch the client on boot. 
 
 ```
 sudo crontab -e
