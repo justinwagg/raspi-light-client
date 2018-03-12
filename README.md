@@ -28,22 +28,22 @@ network={
 }
 ```
 
-1. Create an empty file `ssh.txt` in same directory.
-1. Boot your RasberryPi.
-1. After a minute or so the image should boot and gain access to your provided network SSID.
+2. Create an empty file `ssh.txt` in same directory.
+3. Boot your RasberryPi.
+4. After a minute or so the image should boot and gain access to your provided network SSID.
 
 ```
 ssh pi@192.168.1.55
 pi@192.168.1.55's password:
 ```
-1. [Install pigpio](http://abyz.me.uk/rpi/pigpio/download.html). Setup to run pigpio daemon at startup:
+5. [Install pigpio](http://abyz.me.uk/rpi/pigpio/download.html). Setup to run pigpio daemon at startup:
 
 ```
 sudo crontab -e
 @reboot  /usr/local/bin/pigpiod
 ```
 
-1. Get project requirements setup
+6. Get project requirements setup
 
 ```
 sudo pip install virtualenv
@@ -54,7 +54,7 @@ cd Projects
 git clone git@github.com:justinwagg/raspi-light-client.git
 ```
 
-1. Create virtualenv for project and install requirements
+7. Create virtualenv for project and install requirements
 	
 ```
 cd raspi-light-client
@@ -62,14 +62,14 @@ virtualenv venv
 pip install -r requirements.txt
 ```
 
-1. Build the intitial settings database. A default row will be inserted.
+8. Build the intitial settings database. A default row will be inserted.
 
 ```
 cd setup
 python create_database.py
 ```
 
-1. Setup a cronjob to launch the client on boot. 
+9. Setup a cronjob to launch the client on boot. 
 
 ```
 sudo crontab -e
