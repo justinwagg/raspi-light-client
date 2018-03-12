@@ -41,3 +41,6 @@ Thumbs.db
 
 venv/
 *.pyc
+cronlog
+*.db
+settings.db

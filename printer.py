@@ -1,5 +1,8 @@
 import re
 import datetime
+import logging
+
+logging.basicConfig(filename='main.log', format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', level=logging.DEBUG)
 
 def a_print(string, level):
     x = {
@@ -14,3 +17,4 @@ def a_print(string, level):
     fixed = re.sub('True', '\x1b[32;40mTrue\x1b[0m', string)
     fixed = re.sub('False', '\x1b[31;40mFalse\x1b[0m', fixed)
     print(str(datetime.datetime.now()) + x[level] + fixed)
+    logging.debug(string)
