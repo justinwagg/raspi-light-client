@@ -3,6 +3,7 @@ import time
 from printer import a_print
 import datetime
 from settings import historical_settings, getLastSettings
+import sys
 
 class Lights(object):
 
@@ -38,15 +39,16 @@ class Lights(object):
         self.pirHit = self.lastHit
 
         # Settings
+        self.off = None
         self.low = None 
         self.high = None
         self.manual = None        
         self.on_time = None
+        self.low_time = None
         self.off_time = None
+        self.time_block = None
 
         self.target = self.low
-
-        self.currentMode = None
 
         a_print('Initialized', 'alert')
 
@@ -178,26 +180,46 @@ class Lights(object):
         else:
             pass
 
-    def update_settings(self, settings_object, boot=False):
-        now = datetime.datetime.now().time()
+    def update_settings(self, historical_settings, boot=False):
+        # The job of update_settings is to figure out where in the day we are (off, low, high).
+        # I'm creating a list of times to find out which one we're between, this is tricky because times can span midnight
 
-        self.on_time = settings_object.on_time
-        self.off_time = settings_object.off_time 
+        self.on_time = historical_settings.on_time
+        self.low_time = historical_settings.low_time
+        self.off_time = historical_settings.off_time 
 
-        # a_print('self.on_time: {} | self.off_time: {} | now: {}'.format(self.on_time, self.off_time, now), 'alert')
+        settings_dict = historical_settings.__dict__
 
-        if now >= self.on_time and now <= self.off_time:
-            self.low = settings_object.low 
-            self.high = settings_object.high 
-        elif now < self.on_time or now > self.off_time:
-            self.low = 0 
-            self.high = settings_object.low 
+        settings_dt = []
+        times = [self.on_time, self.off_time, self.low_time]
+        today = datetime.datetime.today()
+        for i in range(-1,2):
+            for j in range(len(times)):
+                settings_dt.append(
+                    datetime.datetime.combine(today + datetime.timedelta(days=i), times[j])
+                    )
+        settings_dt = sorted(settings_dt)
 
-        self.manual = settings_object.manual
+        now = datetime.datetime.now()
+        for i in range(len(settings_dt)):
+            if now >= settings_dt[i] and now < settings_dt[i+1]:
+                # print('We\'re currently in the time block between {} and {}.'.format(settings_dt[i], settings_dt[i+1]) )
+                # print('That\'s the {} setting.'.format(settings_dt[i].time()))
+                # print('The settings indicate {}'.format(settings_dict['mode_config'][str(settings_dt[i].time())]))
+                self.low = settings_dict['mode_config'][str(settings_dt[i].time())]['low']
+                self.high = settings_dict['mode_config'][str(settings_dt[i].time())]['high']
+                self.manual = settings_dict['mode_config'][str(settings_dt[i].time())]['manual']
+                self.off = settings_dict['mode_config'][str(settings_dt[i].time())]['off']
+
+                if self.time_block != str(settings_dt[i].time()):
+                    a_print('Time block change - Time block was: {}'.format(self.time_block), 'setting')
+                    self.time_block = str(settings_dt[i].time())
+                    a_print('Time block change - Time is: {}'.format(self.time_block), 'setting')
 
         if boot:
             self.target = self.low
             a_print('Booting - Setting initial target to {}'.format(self.target), 'alert')
+            # a_print('Time block on Boot = {}'.format(self.time_block), 'alert')
         else:
             pass
 
@@ -208,8 +230,8 @@ class Lights(object):
         else:
             self.target = self.low
 
+
     def main(self):
         self.update_settings(historical_settings[-1])
-        # a_print(str(historical_settings[-1]), 'alert')
         self.input_update()
         self.set_light()

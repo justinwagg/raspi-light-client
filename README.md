@@ -43,6 +43,9 @@ sudo crontab -e
 @reboot  /usr/local/bin/pigpiod
 ```
 
+7. Install pip if you don't have it already
+`sudo apt-get install python-pip`
+
 7. Get project requirements setup
 
 ```
