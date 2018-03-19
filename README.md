@@ -13,7 +13,7 @@ Following [raspberrypi.org's documentation]( https://www.raspberrypi.org/documen
 sudo dd bs=1m if=/path/to-your-image.img of=/dev/rdiskn conv=sync
 ```
 
-2. Once the image is transferred, you'll want to setup headless access. Create a file in `boot` on the SD Card named `wpa_supplicant.conf` with the contents below. Change `SSID` and `PASS` to be your local credentials. 
+1. Once the image is transferred, you'll want to setup headless access. Create a file in `boot` on the SD Card named `wpa_supplicant.conf` with the contents below. Change `SSID` and `PASS` to be your local credentials. 
 	
 ```
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
@@ -28,53 +28,67 @@ network={
 }
 ```
 
-3. Create an empty file `ssh.txt` in same directory.
-4. Boot your RasberryPi.
-5. After a minute or so the image should boot and gain access to your provided network SSID.
+1. Create an empty file `ssh.txt` in same directory.
+1. Boot your RasberryPi.
+1. After a minute or so the image should boot and gain access to your provided network SSID.
 
 ```
 ssh pi@192.168.1.55
 pi@192.168.1.55's password:
 ```
-6. [Install pigpio](http://abyz.me.uk/rpi/pigpio/download.html). Setup to run pigpio daemon at startup:
+
+1. [Install pigpio](http://abyz.me.uk/rpi/pigpio/download.html). Setup to run pigpio daemon at startup:
 
 ```
 sudo crontab -e
 @reboot  /usr/local/bin/pigpiod
 ```
 
-7. Install pip if you don't have it already
-`sudo apt-get install python-pip`
+1. Start pigpiod
+`sudo pigpiod`
 
-7. Get project requirements setup
+1. Get project requirements setup
 
 ```
+sudo apt-get install python-pip
+sudo apt-get install git
 sudo pip install virtualenv
 sudo apt-get install netatalk
 sudo apt-get install sqlite3
-mkdir Projects
-cd Projects
-git clone git@github.com:justinwagg/raspi-light-client.git
 ```
 
-8. Create virtualenv for project and install requirements
+1. Get public key, add to GitHub and clone repo
+```
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+cat /home/pi/.ssh/id_rsa.pub
+git clone git@github.com:justinwagg/raspi-light-client.git
+```
+1. Create virtualenv for project and install requirements
 	
 ```
 cd raspi-light-client
 virtualenv venv
-pip install -r requirements.txt
+venv/bin/pip install -r requirements.txt
 ```
 
-9. Build the intitial settings database. A default row will be inserted.
+1. Build the intitial settings database. A default row will be inserted.
 
 ```
 cd setup
 python create_database.py
 ```
 
-10. Setup a cronjob to launch the client on boot. 
+1. Test run `main.py`
+`venv/bin/python main.py`
+
+1. Setup a cronjob to launch the client on boot. 
 
 ```
 sudo crontab -e
 @reboot sh /path/to/folder/launcher.sh > /path/to/folder/cronlog 2>&1
 ```
+
+
+### Notes:
+Remember to change the localization settings of your Raspberry Pi
+`sudo raspi-config`
