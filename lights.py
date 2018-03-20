@@ -186,7 +186,7 @@ class Lights(object):
 
         self.on_time = historical_settings.on_time
         self.low_time = historical_settings.low_time
-        self.off_time = historical_settings.off_time 
+        self.off_time = historical_settings.off_time
 
         settings_dict = historical_settings.__dict__
 

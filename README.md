@@ -1,11 +1,11 @@
 # Raspi-light-client
 
-A connected LED light. Works in unison with Raspi-light-server, a Flask app interface.
+A connected LED light. It works in unison with Raspi-light-server running flask to control the user lighting experience.
 
 ## Getting Started
 From scratch, you'll need a new formatted SD card, a raspberry pi with internet connectivity, and a little creativity.
 
-### From Scratch
+### Flash SD Card
 1. Format new Raspian SD card 
 Following [raspberrypi.org's documentation]( https://www.raspberrypi.org/documentation/installation/installing-images/mac.md) will be helpful in the next step. 
 [Download](https://www.raspberrypi.org/downloads/raspbian/) the Raspian image and move to your SD card. From the terminal, having found your SD card mount point:
@@ -32,38 +32,51 @@ network={
 1. Boot your RasberryPi.
 1. After a minute or so the image should boot and gain access to your provided network SSID.
 
+### Connect to your Raspberry Pi
+Replace the IP shown with your own modules IP. Checking your router for attached devices might expedite the processes.
+
 ```
 ssh pi@192.168.1.55
 pi@192.168.1.55's password:
 ```
 
-1. [Install pigpio](http://abyz.me.uk/rpi/pigpio/download.html). Setup to run pigpio daemon at startup:
+
+
+##### Install PiGPIO
+
+Source: http://abyz.me.uk/rpi/pigpio/download.html
+
+Use cron to run pigpio daemon at startup:
 
 ```
 sudo crontab -e
 @reboot  /usr/local/bin/pigpiod
 ```
+For our purposes, we can launch it now by running `sudo pigpiod`
 
-1. Start pigpiod
-`sudo pigpiod`
+##### Setup Project Requirements
 
-1. Get project requirements setup
+Get project requirements setup.
 
 ```
-sudo apt-get install python-pip
-sudo apt-get install git
+sudo apt-get update
+sudo pigpiod
+sudo apt-get install python-pip git netatalk sqlite3
 sudo pip install virtualenv
-sudo apt-get install netatalk
-sudo apt-get install sqlite3
 ```
 
-1. Get public key, add to GitHub and clone repo
+##### Setup GitHub Access
+Get a public key, add to GitHub, and clone the repo.
+
 ```
 ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
 cat /home/pi/.ssh/id_rsa.pub
+cd
+cd mkdir Projects
+cd Projects
 git clone git@github.com:justinwagg/raspi-light-client.git
 ```
-1. Create virtualenv for project and install requirements
+##### Setup Virtualenv
 	
 ```
 cd raspi-light-client
@@ -71,17 +84,20 @@ virtualenv venv
 venv/bin/pip install -r requirements.txt
 ```
 
-1. Build the intitial settings database. A default row will be inserted.
+##### Build settings database
 
 ```
 cd setup
 python create_database.py
+cd ..
 ```
 
-1. Test run `main.py`
-`venv/bin/python main.py`
+##### Test
+Test run should how program successfully launches, but no input or outputs are yet attached.
 
-1. Setup a cronjob to launch the client on boot. 
+Run `venv/bin/python main.py`
+
+If successful, setup a cronjob to launch the client on boot. 
 
 ```
 sudo crontab -e
