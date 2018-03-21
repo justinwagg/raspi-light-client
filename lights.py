@@ -176,6 +176,12 @@ class Lights(object):
         else:
             pass
 
+    def translate(self, value, fromMin=0, fromMax=100, toMin=0, toMax=255):
+        fromSpan = fromMax - fromMin
+        toSpan = toMax - toMin
+        valueScaled = float(value - fromMin) / float(fromSpan)
+        return int(toMin + (valueScaled * toSpan))
+
     def update_settings(self, historical_settings, boot=False):
         # The job of update_settings is to figure out where in the day we are (off, low, high).
         # I'm creating a list of times to find out which one we're between, this is tricky because times can span midnight
@@ -199,10 +205,10 @@ class Lights(object):
         now = datetime.datetime.now()
         for i in range(len(settings_dt)):
             if now >= settings_dt[i] and now < settings_dt[i+1]:
-                self.low = settings_dict['mode_config'][str(settings_dt[i].time())]['low']
-                self.high = settings_dict['mode_config'][str(settings_dt[i].time())]['high']
-                self.manual = settings_dict['mode_config'][str(settings_dt[i].time())]['manual']
-                self.off = settings_dict['mode_config'][str(settings_dt[i].time())]['off']
+                self.low = self.translate(settings_dict['mode_config'][str(settings_dt[i].time())]['low'])
+                self.high = self.translate(settings_dict['mode_config'][str(settings_dt[i].time())]['high'])
+                self.manual = self.translate(settings_dict['mode_config'][str(settings_dt[i].time())]['manual'])
+                self.off = self.translate(settings_dict['mode_config'][str(settings_dt[i].time())]['off'])
 
                 if self.time_block != str(settings_dt[i].time()):
                     a_print('Time block change - Time block was: {}'.format(self.time_block), 'setting')
