@@ -3,46 +3,42 @@ import time
 from printer import a_print
 import datetime
 from settings import historical_settings, getLastSettings
+from config import Config
 import sys
+
 
 class Lights(object):
 
     def __init__(self):
-        self.led_array = 27
-        self.switch = 4 
-        self.pir = 17
+        self.led_array = Config.led_array
+        self.switch = Config.switch
+        self.pir = Config.pir
         self.pi = pigpio.pi()
 
         self.pi.set_mode(self.switch, pigpio.INPUT)
-        # self.pi.set_pull_up_down(self.switch, pigpio.PUD_DOWN)
-        # self.pi.set_glitch_filter(self.switch, 5000)
-        # self.pi.set_noise_filter(self.switch, 300000, 100)
-        
 
         self.pi.set_mode(self.pir, pigpio.INPUT)
         self.pi.set_pull_up_down(self.pir, pigpio.PUD_DOWN)
-        # self.pi.set_glitch_filter(self.pir, 5000)
-        # self.pi.set_noise_filter(self.pir, 300000, 100)
 
         self.pi.set_mode(self.led_array, pigpio.OUTPUT)
 
         self.buttonState = False
-        self.buttonMaxOnTime = (1000*60*20)
+        self.buttonMaxOnTime = Config.buttonMaxOnTime
 
         self.pirState = False
         self.allowPIR = True
 
-        self.pirMaxOnTime = (1000*60*2)
-        
+        self.pirMaxOnTime = Config.pirMaxOnTime
+
         self.currentLight = None
         self.lastHit = int(round(time.time() * 1000)) - 1000
         self.pirHit = self.lastHit
 
         # Settings
         self.off = None
-        self.low = None 
+        self.low = None
         self.high = None
-        self.manual = None        
+        self.manual = None
         self.on_time = None
         self.low_time = None
         self.off_time = None
@@ -53,7 +49,7 @@ class Lights(object):
         a_print('Initialized', 'alert')
 
     def event_cbf(self, gpio, level, tick):
-    # def event_cbf(self, gpio):    
+    # def event_cbf(self, gpio):
         # print(gpio, level, tick)
         thisHit = int(round(time.time() * 1000))
         time_delta = thisHit - self.lastHit
@@ -77,8 +73,8 @@ class Lights(object):
                     else:
                         self.target = self.low
                         a_print('The target light is now set to {}'.format(self.target), 'target')
-                       
-                    self.pir_allow(True)                
+
+                    self.pir_allow(True)
                 self.lastHit = thisHit
 
         elif gpio == self.pir:
@@ -86,9 +82,9 @@ class Lights(object):
             if self.allowPIR == True:
 
                 if self.pirState == False:
-                    a_print('PIR Triggered: It\'s been {} seconds since the last trigger. Flipping self.pirState'.format(time_delta/1000), 'input')                    
+                    a_print('PIR Triggered: It\'s been {} seconds since the last trigger. Flipping self.pirState'.format(time_delta/1000), 'input')
                     a_print('The PIR state is {}'.format(self.pirState), 'alert')
-                 
+
                     self.pirState = True
                     a_print('The PIR state is now  {}'.format(self.pirState), 'alert')
 
@@ -112,7 +108,7 @@ class Lights(object):
     def pir_allow(self, state):
         a_print('PIR eligibility is: {}'.format(self.allowPIR), 'setting')
         self.allowPIR = state
-        a_print('PIR eligibility is now: {}'.format(self.allowPIR), 'setting')      
+        a_print('PIR eligibility is now: {}'.format(self.allowPIR), 'setting')
 
     def flip_button(self):
         a_print('The button state is: {}'.format(self.buttonState), 'setting')
@@ -203,9 +199,6 @@ class Lights(object):
         now = datetime.datetime.now()
         for i in range(len(settings_dt)):
             if now >= settings_dt[i] and now < settings_dt[i+1]:
-                # print('We\'re currently in the time block between {} and {}.'.format(settings_dt[i], settings_dt[i+1]) )
-                # print('That\'s the {} setting.'.format(settings_dt[i].time()))
-                # print('The settings indicate {}'.format(settings_dict['mode_config'][str(settings_dt[i].time())]))
                 self.low = settings_dict['mode_config'][str(settings_dt[i].time())]['low']
                 self.high = settings_dict['mode_config'][str(settings_dt[i].time())]['high']
                 self.manual = settings_dict['mode_config'][str(settings_dt[i].time())]['manual']
