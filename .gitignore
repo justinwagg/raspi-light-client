@@ -22,7 +22,7 @@
 
 # Logs and databases #
 ######################
-*.log
+logs/main.log
 *.sql
 *.sqlite
 
