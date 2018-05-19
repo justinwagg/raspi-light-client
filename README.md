@@ -1,12 +1,11 @@
 # Raspi-light-client
 
-A remote, MQTT connected, node controlling LED lights. Together with a mosquitto server lighting becomes fully automated. 
-
+A IoT connected lighting node.
 
 ## Getting Started
 
 #### Format new Raspian SD card 
-Following [raspberrypi.org's documentation]( https://www.raspberrypi.org/documentation/installation/installing-images/mac.md) through this process proves useful.
+Following [raspberrypi.org's documentation]( https://www.raspberrypi.org/documentation/installation/installing-images/mac.md) through this process is useful.
 
 [Download and copy](https://www.raspberrypi.org/downloads/raspbian/) the disk image to your formatted SD card.
 ```
