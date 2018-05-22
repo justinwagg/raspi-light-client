@@ -22,7 +22,7 @@
 
 # Logs and databases #
 ######################
-*.log
+logs/main.log
 *.sql
 *.sqlite
 
@@ -41,3 +41,6 @@ Thumbs.db
 
 venv/
 *.pyc
+cronlog
+*.db
+settings.db

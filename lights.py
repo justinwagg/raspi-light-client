@@ -3,55 +3,53 @@ import time
 from printer import a_print
 import datetime
 from settings import historical_settings, getLastSettings
+from config import Config
+import sys
+
 
 class Lights(object):
 
     def __init__(self):
-        self.led_array = 27
-        self.switch = 4 
-        self.pir = 17
+        self.led_array = Config.led_array
+        self.switch = Config.switch
+        self.pir = Config.pir
         self.pi = pigpio.pi()
 
         self.pi.set_mode(self.switch, pigpio.INPUT)
-        # self.pi.set_pull_up_down(self.switch, pigpio.PUD_DOWN)
-        # self.pi.set_glitch_filter(self.switch, 5000)
-        # self.pi.set_noise_filter(self.switch, 300000, 100)
-        
 
         self.pi.set_mode(self.pir, pigpio.INPUT)
         self.pi.set_pull_up_down(self.pir, pigpio.PUD_DOWN)
-        # self.pi.set_glitch_filter(self.pir, 5000)
-        # self.pi.set_noise_filter(self.pir, 300000, 100)
 
         self.pi.set_mode(self.led_array, pigpio.OUTPUT)
 
         self.buttonState = False
-        self.buttonMaxOnTime = (1000*60*20)
+        self.buttonMaxOnTime = Config.buttonMaxOnTime
 
         self.pirState = False
         self.allowPIR = True
 
-        self.pirMaxOnTime = (1000*60*2)
-        
+        self.pirMaxOnTime = Config.pirMaxOnTime
+
         self.currentLight = None
         self.lastHit = int(round(time.time() * 1000)) - 1000
         self.pirHit = self.lastHit
 
         # Settings
-        self.low = None 
+        self.off = None
+        self.low = None
         self.high = None
-        self.manual = None        
+        self.manual = None
         self.on_time = None
+        self.low_time = None
         self.off_time = None
+        self.time_block = None
 
         self.target = self.low
-
-        self.currentMode = None
 
         a_print('Initialized', 'alert')
 
     def event_cbf(self, gpio, level, tick):
-    # def event_cbf(self, gpio):    
+    # def event_cbf(self, gpio):
         # print(gpio, level, tick)
         thisHit = int(round(time.time() * 1000))
         time_delta = thisHit - self.lastHit
@@ -75,8 +73,8 @@ class Lights(object):
                     else:
                         self.target = self.low
                         a_print('The target light is now set to {}'.format(self.target), 'target')
-                       
-                    self.pir_allow(True)                
+
+                    self.pir_allow(True)
                 self.lastHit = thisHit
 
         elif gpio == self.pir:
@@ -84,9 +82,9 @@ class Lights(object):
             if self.allowPIR == True:
 
                 if self.pirState == False:
-                    a_print('PIR Triggered: It\'s been {} seconds since the last trigger. Flipping self.pirState'.format(time_delta/1000), 'input')                    
+                    a_print('PIR Triggered: It\'s been {} seconds since the last trigger. Flipping self.pirState'.format(time_delta/1000), 'input')
                     a_print('The PIR state is {}'.format(self.pirState), 'alert')
-                 
+
                     self.pirState = True
                     a_print('The PIR state is now  {}'.format(self.pirState), 'alert')
 
@@ -110,7 +108,7 @@ class Lights(object):
     def pir_allow(self, state):
         a_print('PIR eligibility is: {}'.format(self.allowPIR), 'setting')
         self.allowPIR = state
-        a_print('PIR eligibility is now: {}'.format(self.allowPIR), 'setting')      
+        a_print('PIR eligibility is now: {}'.format(self.allowPIR), 'setting')
 
     def flip_button(self):
         a_print('The button state is: {}'.format(self.buttonState), 'setting')
@@ -178,26 +176,49 @@ class Lights(object):
         else:
             pass
 
-    def update_settings(self, settings_object, boot=False):
-        now = datetime.datetime.now().time()
+    def translate(self, value, fromMin=0, fromMax=100, toMin=0, toMax=255):
+        fromSpan = fromMax - fromMin
+        toSpan = toMax - toMin
+        valueScaled = float(value - fromMin) / float(fromSpan)
+        return int(toMin + (valueScaled * toSpan))
 
-        self.on_time = settings_object.on_time
-        self.off_time = settings_object.off_time 
+    def update_settings(self, historical_settings, boot=False):
+        # The job of update_settings is to figure out where in the day we are (off, low, high).
+        # I'm creating a list of times to find out which one we're between, this is tricky because times can span midnight
 
-        # a_print('self.on_time: {} | self.off_time: {} | now: {}'.format(self.on_time, self.off_time, now), 'alert')
+        self.on_time = historical_settings.on_time
+        self.low_time = historical_settings.low_time
+        self.off_time = historical_settings.off_time
 
-        if now >= self.on_time and now <= self.off_time:
-            self.low = settings_object.low 
-            self.high = settings_object.high 
-        elif now < self.on_time or now > self.off_time:
-            self.low = 0 
-            self.high = settings_object.low 
+        settings_dict = historical_settings.__dict__
 
-        self.manual = settings_object.manual
+        settings_dt = []
+        times = [self.on_time, self.off_time, self.low_time]
+        today = datetime.datetime.today()
+        for i in range(-1,2):
+            for j in range(len(times)):
+                settings_dt.append(
+                    datetime.datetime.combine(today + datetime.timedelta(days=i), times[j])
+                    )
+        settings_dt = sorted(settings_dt)
+
+        now = datetime.datetime.now()
+        for i in range(len(settings_dt)):
+            if now >= settings_dt[i] and now < settings_dt[i+1]:
+                self.low = self.translate(settings_dict['mode_config'][str(settings_dt[i].time())]['low'])
+                self.high = self.translate(settings_dict['mode_config'][str(settings_dt[i].time())]['high'])
+                self.manual = self.translate(settings_dict['mode_config'][str(settings_dt[i].time())]['manual'])
+                self.off = self.translate(settings_dict['mode_config'][str(settings_dt[i].time())]['off'])
+
+                if self.time_block != str(settings_dt[i].time()):
+                    a_print('Time block change - Time block was: {}'.format(self.time_block), 'setting')
+                    self.time_block = str(settings_dt[i].time())
+                    a_print('Time block change - Time is: {}'.format(self.time_block), 'setting')
 
         if boot:
             self.target = self.low
             a_print('Booting - Setting initial target to {}'.format(self.target), 'alert')
+            # a_print('Time block on Boot = {}'.format(self.time_block), 'alert')
         else:
             pass
 
@@ -208,8 +229,8 @@ class Lights(object):
         else:
             self.target = self.low
 
+
     def main(self):
         self.update_settings(historical_settings[-1])
-        # a_print(str(historical_settings[-1]), 'alert')
         self.input_update()
         self.set_light()

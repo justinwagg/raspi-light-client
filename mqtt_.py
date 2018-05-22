@@ -3,7 +3,7 @@ from settings import Settings, historical_settings
 import json
 import sqlite3
 from printer import a_print
-
+from config import Config
 
 class MyMQTTClass(mqtt.Client):
 
@@ -33,10 +33,6 @@ class MyMQTTClass(mqtt.Client):
         a_print(string, 'mqtt')
 
     def run(self):
-        self.connect("192.168.1.55")
-        self.subscribe("lights.bathroom", 1)
+        self.connect(Config.broker)
+        self.subscribe(Config.topic, 1)
         self.loop_start()
-
-
-
-
