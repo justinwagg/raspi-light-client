@@ -7,9 +7,11 @@ from config import Config
 
 class MyMQTTClass(mqtt.Client):
 
-    def on_connect(self, mqttc, obj, flags, rc):
-        # print("rc: "+str(rc))
-        a_print("rc: "+str(rc), 'mqtt')
+    def on_connect(self, mqttc, flags, rc):
+        if rc==0:
+            print("connected OK")
+        else:
+            print("Bad connection Returned code=",rc)
 
     def on_message(self, mqttc, obj, msg):
         # print(msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
@@ -33,6 +35,11 @@ class MyMQTTClass(mqtt.Client):
         a_print(string, 'mqtt')
 
     def run(self):
-        self.connect(Config.broker)
+        while True:
+            try:
+                self.connect(Config.broker)
+                break
+            except:
+                pass
         self.subscribe(Config.topic, 1)
         self.loop_start()
